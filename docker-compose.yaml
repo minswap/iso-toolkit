@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  batcher:
+    build:
+      dockerfile: batcher/Dockerfile
+      context: .
+    restart: always
+    environment:
+      MAESTRO_API_KEY: ${MAESTRO_API_KEY}
+      BATCHER_SEED_PHASE: ${BATCHER_SEED_PHASE}
+      FUND_ADDRESS: ${FUND_ADDRESS}
+      NETWORK: ${NETWORK:-Preprod}
+      REDIS_URL: "redis://default:123456@redis:6379"
+      DB_NAME: ${DB_NAME:-dbsync}
+      DB_USER: ${DB_USER:-readonly-dev}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REWARD_UNIT: ${REWARD_UNIT}
+    command: "bun run start"
+    depends_on:
+      - redis
+
+  gen-seeds:
+    build:
+      dockerfile: batcher/Dockerfile
+      context: .
+    restart: always
+    environment:
+      MAESTRO_API_KEY: ${MAESTRO_API_KEY}
+      FUND_SEED_PHASE: ${FUND_SEED_PHASE}
+      BATCHER_ADDRESS: ${BATCHER_ADDRESS}
+      NETWORK: ${NETWORK:-Preprod}
+      REDIS_URL: "redis://default:123456@redis:6379"
+      REWARD_UNIT: ${REWARD_UNIT}
+    command: "bun run gen-rewards"
+    depends_on:
+      - redis
+
+  reward:
+    build:
+      dockerfile: reward/Dockerfile
+      context: .
+    restart: on-failure
+    environment:
+      DEBUG: ${DEBUG:-true}
+      DB_NAME: ${DB_NAME:-dbsync}
+      DB_USER: ${DB_USER:-readonly-dev}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_URL: "redis://redis:6379"
+      REDIS_PASSWORD: "123456"
+    command: [
+      "pipenv", "run", "python", "manage.py", "main",
+      "--pool-list", "pool13la5erny3srx9u4fz9tujtl2490350f89r4w4qjhk0vdjmuv78v",
+      "--start-epoch", "102",
+      "--end-epoch", "105",
+      "--total-reward", "125000000000000",
+      "--smallest-bonus", "25",
+      "--whale-limiter", "100000"
+    ]
+    depends_on:
+      - redis
+
+  redis:
+    restart: unless-stopped
+    platform: linux/amd64
+    image: redis:7
+    command: --requirepass 123456
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data: { }

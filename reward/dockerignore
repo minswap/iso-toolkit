@@ -1,0 +1,26 @@
+# Ignore Python bytecode files
+*.pyc
+
+# Ignore Django's default SQLite database file
+db.sqlite3
+
+# Ignore static files (assuming they are served separately or collected elsewhere)
+/static
+
+# Ignore media files (user uploaded content)
+/media
+
+# Ignore development-specific directories
+__pycache__
+node_modules
+
+# Ignore local settings file (if it's not committed)
+local_settings.py
+
+# Ignore Docker-related files (if they are not used for development)
+.dockerignore
+Dockerfile
+.docker
+
+# Ignore version control system directories/files
+.git
