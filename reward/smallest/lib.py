@@ -220,7 +220,8 @@ class IsoManager:
 
         all_data = redis.hgetall('epoch_reward')
 
-        if len(all_data.keys()) == self.epoch_end - self.epoch_start:
+        # check if gen final_reward
+        if redis.get('final_reward'):
             log.info("generating_final_reward|SKIP|ALL_DONE")
             return
 
